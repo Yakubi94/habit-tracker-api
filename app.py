@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 
+from storage import load_data, save_data
+
 app = Flask(__name__)
 
-habits = []
-next_id = 1
+habits = load_data()
+next_id = max([h["id"] for h in habits], default=0) + 1
 
 
 # ---------- GET ALL ----------
@@ -39,6 +41,8 @@ def add_habit():
     habits.append(habit)
     next_id += 1
 
+    save_data(habits)
+
     return {"message": "Habit added", "habit": habit}, 201
 
 
@@ -51,7 +55,10 @@ def complete_habit(habit_id):
                 return {"error": "Habit already completed"}, 400
 
             habit["completed"] = True
+            save_data(habits)
             return {"message": "Completed", "habit": habit}
+
+    save_data(habits)
 
     return {"error": "Habit not found"}, 404
 
@@ -61,6 +68,7 @@ def complete_habit(habit_id):
 def reset_habits():
     for habit in habits:
         habit["completed"] = False
+        save_data(habits)
 
     return {"message": "All habits reset"}
 
@@ -71,6 +79,7 @@ def delete_habit(habit_id):
     for habit in habits:
         if habit["id"] == habit_id:
             habits.remove(habit)
+            save_data(habits)
             return {"message": "Habit deleted"}
 
     return {"error": "Habit not found"}, 404
